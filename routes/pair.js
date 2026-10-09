@@ -20,7 +20,7 @@ const {
     DisconnectReason
 } = require("@whiskeysockets/baileys");
 
-const PROXY_URL = process.env.PROXY_URL || 'https://savage-proxy.onrender.com';
+const PROXY_URL = process.env.PROXY_URL || 'https://peaky-proxy.pxxlspace.cv';
 
 function generateSessionToken() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';

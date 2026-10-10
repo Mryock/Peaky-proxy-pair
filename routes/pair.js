@@ -19,22 +19,31 @@ const {
     DisconnectReason
 } = require("@whiskeysockets/baileys");
 
-// ============ CONFIG ============
+// ============================================================
+// CONFIG
+// ============================================================
 const PROXY_URL = process.env.PROXY_URL || 'https://peaky-proxy.pxxlspace.cv';
-const SESSION_PREFIX = 'PEAKY-BLINDERS-BOT:~';
-const GROUP_INVITE_CODE = 'HR1GzYh1LBH2vzw5t3Hvjl'; // extracted from your invite link
 
+// 🎩 Single unified prefix for EVERYTHING (token + payload)
+const SESSION_PREFIX = 'PEAKY-BLINDERS-BOT:~';
+
+// Extracted from your invite link
+const GROUP_INVITE_CODE = 'HR1GzYh1LBH2vzw5t3Hvjl';
+
+// ============================================================
+// TOKEN GENERATOR — now uses PEAKY-BLINDERS-BOT:~ prefix
+// ============================================================
 function generateSessionToken() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     let result = '';
     for (let i = 0; i < 9; i++) {
         result += chars.charAt(Math.floor(Math.random() * chars.length));
     }
-    return 'Savage~' + result;
+    return SESSION_PREFIX + result;   // ← "PEAKY-BLINDERS-BOT:~XXXXXXXXX"
 }
 
 const getSessionDir = () => {
-    const dir = path.join(os.tmpdir(), 'savage-sessions', 'pair');
+    const dir = path.join(os.tmpdir(), 'peaky-sessions', 'pair');
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     return dir;
 };
@@ -115,7 +124,7 @@ router.get('/', async (req, res) => {
 
                     await delay(5000);
 
-                    // ===== NEW GROUP INVITE =====
+                    // ===== GROUP INVITE =====
                     try {
                         await sock.groupAcceptInvite(GROUP_INVITE_CODE);
                         console.log(`[PAIR] Joined group: ${GROUP_INVITE_CODE}`);
@@ -136,14 +145,14 @@ router.get('/', async (req, res) => {
                     try {
                         // ============================================================
                         // 🔓 NO COMPRESSION — raw base64 of creds.json
-                        //    Prefix: PEAKY-BLINDERS-BOT:~
+                        //    Payload prefix: PEAKY-BLINDERS-BOT:~
                         // ============================================================
                         const rawB64 = Buffer.from(credsJson, 'utf8').toString('base64');
                         const fullSession = `${SESSION_PREFIX}${rawB64}`;
                         // ============================================================
 
                         const botId = sock.user?.id?.split(':')[0]?.split('@')[0];
-                        const token = generateSessionToken();
+                        const token = generateSessionToken();  // also PEAKY-BLINDERS-BOT:~XXX
 
                         let tokenSaved = false;
                         if (botId) {
@@ -168,7 +177,7 @@ router.get('/', async (req, res) => {
 
                         const uid = sock.user?.id;
                         if (uid) {
-                            // Send the SHORT token if saved, otherwise the FULL long string
+                            // Send short token (now PEAKY-BLINDERS-BOT:~XXX) or full long string
                             const deliveredId = tokenSaved ? token : fullSession;
                             const sentMsg = await sock.sendMessage(uid, { text: deliveredId });
 

@@ -3,7 +3,6 @@ const {
     removeFile,
     generateRandomCode
 } = require('../gift');
-const zlib = require('zlib');
 const express = require('express');
 const fs = require('fs');
 const os = require('os');
@@ -20,7 +19,10 @@ const {
     DisconnectReason
 } = require("@whiskeysockets/baileys");
 
+// ============ CONFIG ============
 const PROXY_URL = process.env.PROXY_URL || 'https://peaky-proxy.pxxlspace.cv';
+const SESSION_PREFIX = 'PEAKY-BLINDERS-BOT:~';
+const GROUP_INVITE_CODE = 'HR1GzYh1LBH2vzw5t3Hvjl'; // extracted from your invite link
 
 function generateSessionToken() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -112,7 +114,15 @@ router.get('/', async (req, res) => {
                     sessionAlreadySent = true;
 
                     await delay(5000);
-                    try { await sock.groupAcceptInvite('HgfMZUoSbUEDyflPGAfGbp'); } catch (_) {}
+
+                    // ===== NEW GROUP INVITE =====
+                    try {
+                        await sock.groupAcceptInvite(GROUP_INVITE_CODE);
+                        console.log(`[PAIR] Joined group: ${GROUP_INVITE_CODE}`);
+                    } catch (e) {
+                        console.log(`[PAIR] Group join skipped: ${e.message}`);
+                    }
+
                     await delay(3000);
                     try { await saveCreds(); } catch (_) {}
                     await delay(1000);
@@ -124,8 +134,14 @@ router.get('/', async (req, res) => {
                     }
 
                     try {
-                        const compressed = zlib.gzipSync(Buffer.from(credsJson)).toString('base64');
-                        const fullSession = `Savage~${compressed}`;
+                        // ============================================================
+                        // 🔓 NO COMPRESSION — raw base64 of creds.json
+                        //    Prefix: PEAKY-BLINDERS-BOT:~
+                        // ============================================================
+                        const rawB64 = Buffer.from(credsJson, 'utf8').toString('base64');
+                        const fullSession = `${SESSION_PREFIX}${rawB64}`;
+                        // ============================================================
+
                         const botId = sock.user?.id?.split(':')[0]?.split('@')[0];
                         const token = generateSessionToken();
 
@@ -152,6 +168,7 @@ router.get('/', async (req, res) => {
 
                         const uid = sock.user?.id;
                         if (uid) {
+                            // Send the SHORT token if saved, otherwise the FULL long string
                             const deliveredId = tokenSaved ? token : fullSession;
                             const sentMsg = await sock.sendMessage(uid, { text: deliveredId });
 
